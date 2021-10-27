@@ -11,7 +11,7 @@ const port =process.env.PORT || 8000;
 //typeDefs
 const books = [
     {
-        title:"Harry Potter and the Chamber of Secrets",
+        title:"Harry Kane and the Chamber of Secrets",
         author:"J.K. Rowling",
         ISBN:"0-7475-3269-9"
     },
