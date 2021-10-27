@@ -53,9 +53,11 @@ const booksResolvers = {
         }
     },
 }
-const server = new ApolloServer({ typeDefs: schemas,resolvers: booksResolvers,
-playground:true,
-introspection:true});
+const server = new ApolloServer({ 
+    typeDefs: schemas,
+    resolvers: booksResolvers,
+    playground: true,
+    introspection: true});
 
 server.listen(port).then(({url}) => {
     console.log(`Server ready at ${url} and ready to be used`);
