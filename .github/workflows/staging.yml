@@ -25,4 +25,4 @@ jobs:
       with:
         heroku_api_key: ${{secrets.HEROKU_API_KEY}}
         heroku_app_name: "vast-sierra-32188"
-        heroku_email:"matiersoky@gmail.com"
+        heroku_email: "matiersoky@gmail.com"
