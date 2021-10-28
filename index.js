@@ -1,64 +1,87 @@
-const {ApolloServer, gql} = require("apollo-server");
-const port =process.env.PORT || 8000;
+const { ApolloServer, gql } = require('apollo-server')
+const fetch = require('node-fetch')
+const ENDPOINT = 'https://blue-surf-430043.us-east-1.aws.cloud.dgraph.io/graphql'
+const typeDefs = gql`
+  type User {
+      email: String!
+      name: String
+      posts: [Post]
+  }
+  type Post {
+    id: ID!
+    title: String!
+    body: String!
+    image: String
+    user: User!
+    comments: [Comment]
+  }
+  type Comment {
+    id: ID!
+    body: String!
+    user: User!
+    post: Post!
+  }
+  type Query {
+    getUser(email: String!): User
+    getAllUsers: [User]
+    getAllPosts: [Post]
+  }
 
-// const express = require('express');
+`
+33
+34
+const method = 'POST'
 
-// const app =express();
-// app.listen (4000,() => {
-//     console.log("Server started on port 4000");
-// })
-//Schemas
-//typeDefs
-const books = [
-    {
-        title:"Harry Kane and the Chamber of Secrets",
-        author:"J.K. Rowling",
-        ISBN:"0-7475-3269-9"
-    },
-    {
-        title:"Jurassic Park",
-        author:"Michael Crichton",
-        ISBN: "0-7475-3269-9"
-    }
-];
-//type NameOfthe type
+const headers = {
 
-const schemas = gql`
+  'Content-type': 'application/graphql'
 
-    type Book {
-        title: String!
-        author: String!
-        ISBN: String
-    }
-    type Query {   
-            books:[Book]
-            book(title:String!):Book
-        }
-    type Mutation {
-        createBook(title: String!, author: String!,ISBN: String): Book
-    }
-
-`;
-const booksResolvers = {
-    Query:{
-        books:() => books,
-        book: (parent,args) => books.find(book => book.title ==args.title)
-    },
-    Mutation:{
-        createBook: (parent,args) =>{
-            const {title, author,ISBN} = args;
-            const book = {title, author,ISBN };
-            books.push(book);
-            return book;
-        }
-    },
 }
-const server = new ApolloServer({ 
-    typeDefs: schemas,
-    resolvers: booksResolvers,
-    playground: true,
-    introspection: true});
+const argsToString = (args) => {
+  if (typeof args === 'object') { let argStrings = []
+      Object.keys(args).forEach((key) => {
+      argStrings.push(`${key}:"${args[key]}"`)
 
-server.listen(port).then(({url}) => {
-    console.log(`Server ready at ${url} and ready to be used`);
-}).catch(err => console.log(err.message));
+    })
+
+    if (argStrings.length) {
+
+      return `${argStrings.join(', ')}`
+    }
+  }
+  return ''
+}
+
+const sendQuery = async({ name, args, fields }) => {
+  let body = `
+query {
+  ${name} (${argsToString(args)}) {
+    ${fields}
+  }
+}`
+  const fetchResult = await fetch(ENDPOINT, {
+    method,
+    headers,
+    body
+  })
+  const result = await fetchResult.json()
+  return result.data[name]
+}
+const resolvers = {
+
+  Query: {
+    getAllUsers: async () => sendQuery({ name: 'queryUser', fields: 'name posts { id title }' }),
+    getUser: async (_parent, args) => sendQuery({ name: 'getUser', args, fields: 'name email posts { id title }' }),
+    getAllPosts: async () => sendQuery({ name: 'queryPost', fields: 'id title body image user { name } comments { id body user { name } }' })
+  }
+}
+
+const server = new ApolloServer({
+  typeDefs,
+
+  resolvers,
+
+})
+server.listen().then(({ url })=> {
+ console.log(`Server ready at at ${url}`)
+})
